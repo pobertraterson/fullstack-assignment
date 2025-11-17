@@ -132,3 +132,6 @@ dist
 
 # Ash Added
 *.sqlite
+
+# Rob Added
+app/your_code_in_here.txt

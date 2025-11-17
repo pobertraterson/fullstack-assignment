@@ -5,6 +5,12 @@ const cors = require('cors');
 const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
+/*
+    this is a forked repo of ash-williams/auctionary_starter
+    please do not copy. this is assignment work of rob's
+
+    robertpaterson.net
+ */
 
 const app = express();
 app.use(cors());
