@@ -22,7 +22,7 @@ validationSchema.validate({email: "admin@robertpaterson.net", password: "DontUs3
 const create_account = (req, res) => {
     const validationRes = validationSchema.validate({email: req.body.email, password: req.body.password, firstname: req.body.first_name, surname: req.body.last_name});
     console.log(validationRes);
-    if (validationRes.valid) {
+    if (validationRes.error) {
         return res.status(400).send({error: "Invalid data. Make sure your email, firstname, and surname are correct and that your password is between 8-20 characters & has 2 lowercase & uppercase letters along with 2 numbers and 2 special characters."})
     }
 
@@ -45,10 +45,12 @@ const create_account = (req, res) => {
 }
 
 const login = (req, res) => {
+
     const schema = joi.object({
         email:joi.string().email().max(64).required(),
         password:joi.string().required()
     })
+    schema.validate({email: req.body.email, password: req.body.password});
     return res.status(500).send({error: "Server Error 500. Don't worry! This is our fault, not yours."});
 }
 
