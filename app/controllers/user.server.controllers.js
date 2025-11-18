@@ -23,8 +23,13 @@ const validationSchema = joi.object({
         .required()
 })
 
+validationSchema.validate({email: "admin@robertpaterson.net", password: "DontUs3_Th!sAsAPw0rd", firstname: "Robert", surname: "Paterson"})
+
 const create_account = (req, res) => {
-    let values = [req.body.email, req.body.password, req.body.first_name, req.body.last_name];
+    const validationRes = validationSchema.validate({email: req.body.email, password: req.body.password, firstname: req.body.firstname, surname: req.body.surname});
+    if (!validationRes.valid) {
+        return res.status(400).send({error: "Invalid data. Make sure your email, firstname, and surname are correct and that your password is between 8-20 characters & has 2 lowercase & uppercase letters along with 2 numbers and 2 special characters."})
+    }
 
     const sql = 'INSERT INTO users (user_id, email, password, first_name, last_name, salt, session_token) VALUES (?,?,?,?,?,?,?)'
 
@@ -44,7 +49,7 @@ const create_account = (req, res) => {
 }
 
 const login = (req, res) => {
-    return res.sendStatus(500);
+
 }
 
 const logout = (req, res) => {
