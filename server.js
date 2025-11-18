@@ -9,7 +9,7 @@ const swaggerUi = require('swagger-ui-express');
     this is a forked repo of ash-williams/auctionary_starter
     please do not copy. this is assignment work of rob's
 
-    robertpaterson.net
+    my website: robertpaterson.net :D
  */
 
 const app = express();

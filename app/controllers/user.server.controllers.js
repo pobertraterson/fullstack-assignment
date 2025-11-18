@@ -1,5 +1,46 @@
+const joi = require('joi');
+const db = require('/database');
+
+const validationSchema = joi.object({
+    email: joi.string().email().max(64).required(),
+    password: joi.string()
+        .min(8)
+        .max(20)
+        .pattern(/(?=(?:.*[a-z]){2,16}).+/, 'lowercase')
+        .pattern(/(?=(?:.*[A-Z]){2,16}).+/, 'uppercase')
+        .pattern(/(?=(?:.*[0-9]){2,16}).+/, 'number')
+        .pattern(/(?=(?:.*[!"#$%&'()*+,-./:<=>?@[\]^_`{|}~]){1,16}).+/, 'special')
+        .required(),
+    // stole this from stackoverflow
+    // https://stackoverflow.com/questions/77880219/how-do-i-validate-a-password-using-joi-to-ensure-that-it-contains-2-numbers-2-s
+    firstname: joi.string().min(1).max(30)
+        .pattern(/(?=(?:.*[A-Z]){2,16}).+/, 'uppercase')
+        .pattern(/(?=(?:.*[a-z]){2,16}).+/, 'lowercase')
+        .required(),
+    surname: joi.string().min(1).max(30)
+        .pattern(/(?=(?:.*[A-Z]){2,16}).+/, 'uppercase')
+        .pattern(/(?=(?:.*[a-z]){2,16}).+/, 'lowercase')
+        .required()
+})
+
 const create_account = (req, res) => {
-    return res.sendStatus(500);
+    let values = [req.body.email, req.body.password, req.body.first_name, req.body.last_name];
+
+    const sql = 'INSERT INTO users (user_id, email, password, first_name, last_name, salt, session_token) VALUES (?,?,?,?,?,?,?)'
+
+    db.run(sql, function (err) {
+        if(err) return res.sendStatus(500).send({error: 'Server Error 500'});
+
+        return res.status(201).send({
+            user_id: this.lastID,
+            email: req.body.email,
+            password: req.body.password,
+            first_name: req.body.first_name,
+            last_name: req.body.last_name,
+            salt: this.salt,
+            session_token: this.session_token
+        })
+    })
 }
 
 const login = (req, res) => {
