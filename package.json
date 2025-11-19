@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/ash-williams/auctionary_starter#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "body-parser": "^1.20.2",
     "chai": "^4.3.8",
     "chai-http": "^4.4.0",
