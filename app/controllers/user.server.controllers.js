@@ -20,38 +20,47 @@ const validationSchema = joi.object({
 
 validationSchema.validate({email: "admin@robertpaterson.net", password: "DontUs3_Th!sAsAPw0rd", firstname: "Robert", surname: "Paterson"})
 
-const create_account = (req, res) => {
-    const validationRes = validationSchema.validate({email: req.body.email, password: req.body.password, firstname: req.body.first_name, surname: req.body.last_name});
-    console.log(validationRes);
+const create_account = async (req, res) => {
+    const validationRes = validationSchema.validate({
+        email: req.body.email,
+        password: req.body.password,
+        firstname: req.body.first_name,
+        surname: req.body.last_name
+    });
     if (validationRes.error) {
-        return res.status(400).send({error: "Invalid data. Make sure your email, firstname, and surname are correct and that your password is between 8-20 characters & has 2 lowercase & uppercase letters along with 2 numbers and 2 special characters."})
-    } else {
-        const sql = 'INSERT INTO users (user_id, email, password, first_name, last_name, salt, session_token) VALUES (?,?,?,?,?,?,?)'
+        return res.status(400).send({
+            error: "Invalid data. Make sure your email, firstname, and surname are correct and that your password is between 8-20 characters & has 2 lowercase & uppercase letters along with 2 numbers and 2 special characters."
+        });
+    }
 
-        db.run(sql, async function (err) {
-            if (err) return res.sendStatus(500).send({error: 'Server Error 500. Don\'t worry! This is our fault, not yours!'});
-            async function hashPassword(password) {
-                try {
-                    const hashed = await bcrypt.hash(password, 10);
-                    console.log(hashed);
-                    return hashed;
-                } catch (err) {
-                    return res.status(500).send({error: "Error while hashing password: " + err});
-                }
+    try {
+        let saltRound = Math.floor((Math.random() * (20 - 5 + 1)) + 5);
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        const sql = 'INSERT INTO users (email, password, first_name, last_name, salt) VALUES (?,?,?,?,?)';
+        const params = [
+            req.body.email,
+            hashedPassword,
+            req.body.first_name,
+            req.body.last_name,
+            saltRound
+        ];
+        db.run(sql, params, function(err) {
+            if (err) {
+                return res.status(500).send({error: 'Server Error 500. Don\'t worry! This is our fault, not yours!'});
             }
-
             return res.status(201).send({
                 "user_id": this.lastID,
                 "email": req.body.email,
-                "password": await hashPassword(req.body.password),
+                "password": hashedPassword,
                 "first_name": req.body.first_name,
                 "last_name": req.body.last_name,
-                "salt": 10,
-                // session_token: this.session_token
+                "salt": saltRound
             });
         });
+    } catch (err) {
+        return res.status(500).send({error: "Error while hashing password: " + err});
     }
-}
+};
 
 const login = (req, res) => {
     const sql = "SELECT * FROM users WHERE email = \"" + req.body.email + "\"";
