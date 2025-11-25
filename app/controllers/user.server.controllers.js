@@ -40,7 +40,7 @@ const login = (req, res) => {
 
     const {error,value} = joiSchema.validate(req.body);
     if (error) {
-        return res.status(400).send({error: error.details[0].message});
+        return res.status(400).send({"error_message": error.details[0].message});
     }
     users.authenticateUser(req.body.email, req.body.password, (err, id) => {
         if (err === 404) return res.status(400).send({"error_message": "Incorrect email or password. Error details: " + err});
