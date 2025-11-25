@@ -43,8 +43,8 @@ const login = (req, res) => {
         return res.status(400).send({error: error.details[0].message});
     }
     users.authenticateUser(req.body.email, req.body.password, (err, id) => {
-        if (err === 404) return res.status(400).send("Incorrect email or password");
-        if (err) return res.sendStatus(500);
+        if (err === 404) return res.status(400).send({"error_message": "Incorrect email or password. Error details: " + err});
+        if (err) return res.status(500).send({"error_message": err});
 
         users.getToken(id, (err, token) => {
             if (err) return res.sendStatus(500);
@@ -52,7 +52,7 @@ const login = (req, res) => {
                 return res.status(200).send({user_id: id, session_token: token});
             } else {
                 users.setToken(id, (err, token) => {
-                    if (err) return res.sendStatus(500);
+                    if (err) return res.status(500).send({"error_message": err.message});
                     return res.status(200).send({user_id: id, session_token: token});
                 })
             }

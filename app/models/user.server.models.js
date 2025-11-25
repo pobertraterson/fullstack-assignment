@@ -21,7 +21,6 @@ const addNewUser = (user,done) => {
         db.run(sql, params, function(err) {
             console.log(err);
             if (err) return done(err);
-            console.log(params);
             return done(null, this.lastID);
         });
     });
@@ -47,7 +46,7 @@ const authenticateUser = (email,password,done) => {
 
 const setToken = (id, done) => {
     let token = crypto.randomBytes(16).toString('hex');
-    const sql = 'UPDATES users SET session_token=? WHERE user_id=?';
+    const sql = 'UPDATE users SET session_token=? WHERE user_id=?';
 
     db.run(sql, [token,id], (err) => {
         return done(err,token);
