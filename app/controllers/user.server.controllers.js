@@ -1,7 +1,15 @@
 const joi = require('joi');
 const db = require('../../database');
 const users = require('../models/user.server.models');
-const { addNewUser } = require('../models/user.server.models');
+
+const validationSchema = joi.object({
+    email: joi.string().email().max(64).required(),
+    password: joi.string().pattern(new RegExp("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,30}$")).required(),
+    // stole this from stackoverflow
+    // https://stackoverflow.com/questions/77880219/how-do-i-validate-a-password-using-joi-to-ensure-that-it-contains-2-numbers-2-s
+    first_name: joi.string().min(1).max(30).required(),
+    last_name: joi.string().min(1).max(30).required()
+});
 
 const create_account = (req, res) => {
     const params = {
@@ -11,39 +19,46 @@ const create_account = (req, res) => {
         password: req.body.password
     };
 
-    addNewUser(params, (err) => {
+    const { error } = validationSchema.validate(params);
+
+    if(error) return res.status(400).send({"error_message": error});
+    users.addNewUser(params, (err, userId) => {
+        if (err === 400) return res.status(400).send({"error_message": "Account already exists with that email."});
         if (err) {
-            return res.status(500).send({error: err, "message": "Something went wrong. Please try again."})
+            return res.status(500).send({"error_message": err})
         }
-        return res.status(201).send({params})
+        console.log(params);
+        return res.status(201).send({user_id: userId});
     });
 }
 
 const login = (req, res) => {
-    const sql = "SELECT * FROM users WHERE email = \"" + req.body.email + "\"";
-    const schema = joi.object({
-        email:joi.string().email().max(64).required(),
-        password:joi.string().required()
+    const joiSchema = joi.object({
+        email: joi.string().email().required(),
+        password: joi.string().required()
     });
-    const validationRes = schema.validate({email: req.body.email, password: req.body.password});
-    if (validationRes.error) {
-        return res.status(400).send({500: "Something went wrong. Please make sure you entered your email and password correctly.", error: validationRes.error});
-    }
-    console.log(req.body.email);
 
-    db.get(sql,function (err, row) {
-        if (err) return res.status(500).send({error: "Server Error 500. Don't worry! This is our fault, not yours.", err});
-        if (!row) {
-            return res.status(404).send({error: "No user found with that email."});
-        } else {
-            bcrypt.compare(req.body.password,row.password,function(err,result) {
-                if (err) return res.status(500).send({error: "Something went wrong. Error: " + err});
-                if (result) return res.status(200).send("Successful login");
-                if (!result) return res.status(401).send("Unauthorised");
-            });
-        }
-    });
-}
+    const {error,value} = joiSchema.validate(req.body);
+    if (error) {
+        return res.status(400).send({error: error.details[0].message});
+    }
+    users.authenticateUser(req.body.email, req.body.password, (err, id) => {
+        if (err === 404) return res.status(400).send("Incorrect email or password");
+        if (err) return res.sendStatus(500);
+
+        users.getToken(id, (err, token) => {
+            if (err) return res.sendStatus(500);
+            if (token){
+                return res.status(200).send({user_id: id, session_token: token});
+            } else {
+                users.setToken(id, (err, token) => {
+                    if (err) return res.sendStatus(500);
+                    return res.status(200).send({user_id: id, session_token: token});
+                })
+            }
+        })
+    })
+};
 
 const logout = (req, res) => {
     return res.sendStatus(500);

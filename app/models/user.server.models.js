@@ -3,39 +3,38 @@ const db = require('../../database');
 const joi = require("joi");
 const user = require("../models/user.server.models");
 
-const validationSchema = joi.object({
-    email: joi.string().email().max(64).required(),
-    password: joi.string().min(8).max(20).pattern(/(?=(?:.*[a-z]){2,16}).+/, 'lowercase').pattern(/(?=(?:.*[A-Z]){2,16}).+/, 'uppercase').pattern(/(?=(?:.*[0-9]){2,16}).+/, 'number').pattern(/(?=(?:.*[!"#$%&'()*+,-./:<=>?@[\]^_`{|}~]){1,16}).+/, 'special').required(),
-    // stole this from stackoverflow
-    // https://stackoverflow.com/questions/77880219/how-do-i-validate-a-password-using-joi-to-ensure-that-it-contains-2-numbers-2-s
-    firstname: joi.string().min(1).max(30).required(),
-    surname: joi.string().min(1).max(30).required(),
-    salt: joi.string().required(),
-    session_token: joi.string(),
-});
 const getHash = (password,salt) => {
-    return crypto.pbkdf2Sync(password,salt,100000,64,'sha512').toString('hex');
+    // I changed it to sha512 because apparently that's better. If I messed this up that would be very bad.
+    return crypto.pbkdf2Sync(password,salt,100000,256,'sha512').toString('hex');
 };
 const addNewUser = (user,done) => {
     const salt = crypto.randomBytes(64);
     const hash = getHash(user.password, salt);
 
     const sql = 'INSERT INTO users (first_name, last_name, email, password, salt) VALUES (?,?,?,?,?)';
+    const sqlCheck = 'SELECT * FROM users WHERE email = ?';
     const params = [user.first_name,user.last_name,user.email,hash,salt.toString('hex')];
 
-    db.run(sql, params, function(err) {
-        if (err) return done(err);
-        console.log(params);
-        return done(null);
+    db.get(sqlCheck, user.email, (err, row) => {
+        if (row) return done(400);
+
+        db.run(sql, params, function(err) {
+            console.log(err);
+            if (err) return done(err);
+            console.log(params);
+            return done(null, this.lastID);
+        });
     });
-}
+
+
+};
 
 const authenticateUser = (email,password,done) => {
     const sql = 'SELECT user_id, password, salt FROM users WHERE email=?';
 
     db.get(sql, [email], (err, row) => {
-        if (err) return done(err);
-        if(!row) return done(404);
+        if(err) return done(err);
+        if(!row) return done(null,null);
         if(row.salt===null) row.salt = '';
         let salt = Buffer.from(row.salt, 'hex');
         if(row.password===getHash(password,salt)){
@@ -43,9 +42,49 @@ const authenticateUser = (email,password,done) => {
         } else {
             return done(404)
         }
+    });
+};
+
+const setToken = (id, done) => {
+    let token = crypto.randomBytes(16).toString('hex');
+    const sql = 'UPDATES users SET session_token=? WHERE user_id=?';
+
+    db.run(sql, [token,id], (err) => {
+        return done(err,token);
+    });
+};
+
+const getToken = (id, done) => {
+    const sql = 'SELECT session_token FROM users WHERE user_id=?';
+    db.get(sql,[id],(err,row) => {
+        if (err) return done(err);
+        if(!row) return done(null,null);
+        return done(null, row.session_token);
+    });
+};
+
+const removeToken = (token, done) => {
+    const sql = 'UPDATE users SET session_token=null WHERE session_token=?';
+
+    db.run(sql, [token], (err) => {
+        return done(err);
+    });
+};
+
+const getIdFromToken = (token, done) => {
+    const sql = 'SELECT user_id FROM users WHERE session_token=?';
+    db.get(sql, [token], (err, row) => {
+        if (err) return done(err);
+        if(!row) return done(null,null);
+        return done(null, row.user_id);
     })
-}
+};
 
 module.exports = {
-    addNewUser
+    addNewUser,
+    authenticateUser,
+    setToken,
+    getToken,
+    removeToken,
+    getIdFromToken
 }
