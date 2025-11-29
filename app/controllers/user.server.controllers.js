@@ -61,7 +61,15 @@ const login = (req, res) => {
 };
 
 const logout = (req, res) => {
-    return res.sendStatus(500);
+    users.getIdFromToken(req.body.session_token, (err, id) => {
+        if (err) return res.status(500).send({"error_message": err});
+        if (!id) return res.status(401).send({"error_message": "Unauthorised request. Are you logged in?"});
+        console.log(id);
+        users.removeToken(req.body.token, (err) => {
+            if (err) return res.status(500).send({"error_message": err});
+            return res.status(200).send("200 Successfully logged out");
+        });
+    });
 }
 
 module.exports = {
