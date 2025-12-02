@@ -1,5 +1,4 @@
 const joi = require('joi');
-const db = require('../../database');
 const users = require('../models/user.server.models');
 
 const validationSchema = joi.object({
@@ -61,13 +60,15 @@ const login = (req, res) => {
 };
 
 const logout = (req, res) => {
-    users.getIdFromToken(req.body.session_token, (err, id) => {
+    const token = req.get('X-Authorisation');
+    if (!token) return res.status(401).send({"error_message": "Something went wrong. Are you logged in?"});
+    users.getIdFromToken(token, (err, id) => {
         if (err) return res.status(500).send({"error_message": err});
         if (!id) return res.status(401).send({"error_message": "Unauthorised request. Are you logged in?"});
         console.log(id);
-        users.removeToken(req.body.token, (err) => {
+        users.removeToken(token, (err) => {
             if (err) return res.status(500).send({"error_message": err});
-            return res.status(200).send("200 Successfully logged out");
+            return res.sendStatus(200);
         });
     });
 }

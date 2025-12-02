@@ -2,8 +2,6 @@ const express = require('express');
 const morgan  = require('morgan');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
 
 /*
     this is a forked repo of ash-williams/auctionary_starter
