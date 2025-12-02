@@ -60,17 +60,20 @@ const login = (req, res) => {
 };
 
 const logout = (req, res) => {
-    const token = req.get('X-Authorisation');
-    if (!token) return res.status(401).send({"error_message": "Something went wrong. Are you logged in?"});
-    users.getIdFromToken(token, (err, id) => {
+    const token = req.get('X-Authorization');
+    console.log("DEBUG TOKEN IS: " + token);
+    users.removeToken(token, (err) => {
         if (err) return res.status(500).send({"error_message": err});
-        if (!id) return res.status(401).send({"error_message": "Unauthorised request. Are you logged in?"});
-        console.log(id);
-        users.removeToken(token, (err) => {
-            if (err) return res.status(500).send({"error_message": err});
-            return res.sendStatus(200);
-        });
+        return res.sendStatus(200);
     });
+
+    // users.getIdFromToken(token, (err, id) => {
+    //     if (err) return res.status(500).send({"error_message": err});
+    //     console.log("DEBUG ID IS: " + id);
+    //     if (!id) return res.status(401).send({"error_message": "Unauthorised request. Are you logged in?"});
+    //     console.log(id);
+    //
+    // });
 }
 
 module.exports = {
