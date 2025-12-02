@@ -34,7 +34,7 @@ const create_account = (req, res) => {
 const login = (req, res) => {
     const joiSchema = joi.object({
         email: joi.string().email().required(),
-        password: joi.string().required()
+        password: joi.string().pattern(new RegExp("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,30}$")).required()
     });
 
     const {error,value} = joiSchema.validate(req.body);

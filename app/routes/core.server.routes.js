@@ -1,11 +1,12 @@
 const core = require("../controllers/core.server.controllers");
+const isAuth = require("../lib/authentication");
 
 module.exports = function(app) {
     app.route("/search")
         .get(core.search());
 
     app.route("/item")
-        .post(core.item);
+        .post(isAuth, core.item);
 
     app.route("/item/:itemId")
         .get(core.itemSpecific());
