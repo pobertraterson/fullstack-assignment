@@ -2,7 +2,7 @@ const core = require("../models/core.server.models");
 const joi = require('joi');
 
 const search = (req, res) => {
-    // return res.sendStatus(500);
+    return res.sendStatus(500);
     // core.searchItems(q, (err, items) => {
     //     if(err) return res.status(500).send({"error_message": err});
     //     return res.status(200).send(items);
@@ -68,8 +68,9 @@ const getItemSpecificBid = (req, res) => {
 }
 
 module.exports = {
-    item: item,
-    itemSpecific: itemSpecific,
-    postItemSpecificBid: postItemSpecificBid,
-    getItemSpecificBid: getItemSpecificBid
+    search,
+    item,
+    itemSpecific,
+    postItemSpecificBid,
+    getItemSpecificBid
 }
