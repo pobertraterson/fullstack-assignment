@@ -1,7 +1,6 @@
 const crypto = require("crypto");
 const db = require('../../database');
 
-
 // account creation
 const getHash = (password,salt) => {
     // I changed it to sha512 because apparently that's better. If I messed this up that would be very bad.
