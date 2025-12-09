@@ -12,7 +12,7 @@ module.exports = function(app) {
         .get(core.itemSpecific);
 
     app.route("/item/:itemId/bid")
-        .post(core.postItemSpecificBid);
+        .post(auth.isAuth, core.postItemSpecificBid);
 
     app.route("/item/:itemId/bid")
         .get(core.getItemSpecificBid);

@@ -21,16 +21,42 @@ const searchItems = (q, done) => {
 };
 
 const createItem = (item, done) => {
-    console.log("DEBUG /item STARTED");
-    const sql = `INSERT INTO items (item_name, item_description, starting_bid, start_date, end_date, creator_id) VALUES (?,?,?,?,?,?)`;
-    const params = [item.item_name, item.item_description, item.starting_bid, new Date(), item.end_date, item.creator_id];
-    db.run(sql, params, function(err) {
-        if (err) return done(err);
+    const sql = `INSERT INTO items (name, description, starting_bid, start_date, end_date, creator_id) VALUES (?,?,?,?,?,?)`;
+    db.run(sql, [
+        item.name,
+        item.description,
+        item.starting_bid,
+        Date.now(),
+        item.end_date,
+        item.creator_id
+    ], function(err) {
+        if (err) {
+            console.log(err);
+            return done(err);
+        }
         return done(null, this.lastID);
     });
 };
 
+const getSpecificItems = (q, done) => {
+    const sql = `SELECT * FROM items WHERE item_id = ?`;
+    db.get(sql, q, (err, rows) => {
+        if (err) return done(err);
+        return done(null, rows);
+    })
+};
+
+const bidOnItem = (item, done) => {
+    const sql = `UPDATE items SET starting_bid=? WHERE item_id=?`;
+    db.run(sql, item, (err) => {
+        if (err) return done(err);
+        return done(null, item);
+    })
+}
+
 module.exports = {
     searchItems,
-    createItem
+    createItem,
+    getSpecificItems,
+    bidOnItem
 }

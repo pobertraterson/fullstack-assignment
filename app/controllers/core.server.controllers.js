@@ -29,26 +29,27 @@ const search = (req, res) => {
 }
 
 const item = (req, res) => {
-    console.log("DEBUG /item STARTED");
     const schema = joi.object({
-        item_name: joi.string().min(1).max(100).required(),
-        item_description: joi.string().min(1).max(1000).required(),
-        starting_bid: joi.number().required(),
-        ending_date: joi.date().greater('now').required()
+        name: joi.string().min(1).max(100).required(),
+        description: joi.string().max(1000).required(),
+        starting_bid: joi.number().min(0).required(),
+        start_date: joi.date().default(Date.now),
+        end_date: joi.date().greater(joi.ref('start_date')).required()
     });
-    const params = {
-        "creator_id": req.body.user_id,
-        "item_name": req.body.item_name,
-        "item_description": req.body.item_description,
-        "starting_bid": req.body.starting_bid,
-        "end_date": req.body.end_date
-    };
-    const { error } = schema.validate(params);
-    if(error) return res.status(400).send({"error_message": error.message});
 
-    if (!req.body.user_id) {
+
+    const { error, data} = schema.validate(req.body);
+    if(error) {
+        console.log("Item: " + req.body.name + ". Reason of failure: " + error.message);
+        return res.status(400).send({"error_message": error.message});
+    }
+
+    if (!req.user_id) {
         return res.status(401).send({"error_message": "Please login before adding an item for auction."});
     }
+
+    const params = {...data, creator_id: req.user_id};
+
     core.createItem(params, (err, item_id) => {
         if (err) return res.status(500).send({"error_message": err});
         return res.status(201).send({"item_id": item_id});
@@ -56,7 +57,27 @@ const item = (req, res) => {
 }
 
 const itemSpecific = (req, res) => {
-    return res.sendStatus(500);
+    const schema = joi.object({
+        amount: joi.number().required()
+    });
+
+    const { error }= schema.validate(req.body);
+    if(error) {
+        console.log("Item: " + req.body.name + ". Reason of failure: " + error.message);
+        return res.status(400).send({"error_message": error.message});
+    }
+
+    if (!req.user_id) {
+        return res.status(401).send({"error_message": "Please login before bidding on an item."});
+    }
+
+    core.getSpecificItems(req.item_id, (err, data) => {
+        if (err) return res.status(500).send({"error_message": err});
+        if (!data) return res.status(404).send({"error_message": "Item not found."});
+        if (data.creator_id === req.user_id) return res.status(403).send({"error_message": "You are not allowed to bid on your own item."});
+
+
+    })
 }
 
 const postItemSpecificBid = (req, res) => {

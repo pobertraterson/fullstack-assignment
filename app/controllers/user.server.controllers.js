@@ -61,7 +61,6 @@ const login = (req, res) => {
 
 const logout = (req, res) => {
     const token = req.get('X-Authorization');
-    console.log("DEBUG TOKEN IS: " + token);
     users.removeToken(token, (err) => {
         if (err) return res.status(500).send({"error_message": err});
         return res.sendStatus(200);
