@@ -41,17 +41,29 @@ const createItem = (item, done) => {
 const getSpecificItems = (q, done) => {
     const sql = `SELECT * FROM items WHERE item_id = ?`;
     db.get(sql, q, (err, rows) => {
-        if (err) return done(err);
+        if (err) {
+            console.log(err.message);
+            return done(err);
+        }
         return done(null, rows);
     })
 };
 
 const bidOnItem = (item, done) => {
-    const sql = `UPDATE items SET starting_bid=? WHERE item_id=?`;
-    db.run(sql, item, (err) => {
-        if (err) return done(err);
-        return done(null, item);
-    })
+    getSpecificItems(item.item_id, (err, rows) => {
+        if (err) {
+            console.log("SERVER ERROR " + err.message)
+            return done(err);
+        }
+        if (!rows) return done(404);
+        if (item.creator_id === rows.creator_id) return done(403);
+        if (item.starting_bid <= rows.starting_bid) return done(400);
+        const sql = `UPDATE items SET starting_bid=? WHERE item_id = ?`;
+        db.run(sql, item, (err) => {
+            if (err) return done(err);
+            return done(null, item);
+        });
+    });
 }
 
 module.exports = {

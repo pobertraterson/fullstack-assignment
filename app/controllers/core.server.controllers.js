@@ -40,7 +40,7 @@ const item = (req, res) => {
 
     const { error, data} = schema.validate(req.body);
     if(error) {
-        console.log("Item: " + req.body.name + ". Reason of failure: " + error.message);
+        console.error("Item: " + req.body.name + ". Reason of failure: " + error.message);
         return res.status(400).send({"error_message": error.message});
     }
 
@@ -57,31 +57,45 @@ const item = (req, res) => {
 }
 
 const itemSpecific = (req, res) => {
-    const schema = joi.object({
-        amount: joi.number().required()
-    });
-
-    const { error }= schema.validate(req.body);
-    if(error) {
-        console.log("Item: " + req.body.name + ". Reason of failure: " + error.message);
-        return res.status(400).send({"error_message": error.message});
-    }
-
-    if (!req.user_id) {
-        return res.status(401).send({"error_message": "Please login before bidding on an item."});
-    }
-
-    core.getSpecificItems(req.item_id, (err, data) => {
-        if (err) return res.status(500).send({"error_message": err});
-        if (!data) return res.status(404).send({"error_message": "Item not found."});
-        if (data.creator_id === req.user_id) return res.status(403).send({"error_message": "You are not allowed to bid on your own item."});
-
-
+    core.getSpecificItems(req.body.item_id, (err, data) => {
+        if (err) {
+            return res.status(500).send({"error_message": err});
+        }
+        if (err === 404) return res.status(404).send({"error_message": "Not Found"});
+        return res.status(200).send({data});
     })
 }
 
 const postItemSpecificBid = (req, res) => {
-    return res.sendStatus(500);
+    const schema = joi.object({
+        amount: joi.number().min(0).required()
+    });
+    console.log("Bidding Schema Set Complete");
+
+    if (req.body > 1) {
+        return res.status(400).send({"error_message": "Invalid"});
+    }
+    const { error, data } = schema.validate(req.body.amount);
+    if(error) {
+        console.error("Bid: " + req.body.amount + ". Reason of failure: " + error.message);
+        return res.status(400).send({"error_message": error.message});
+    }
+
+    const params = {...data, creator_id: req.user_id, item_id: req.body.item_id};
+
+    if (!req.user_id) {
+        return res.status(401).send({"error_message": "Please login before bidding on an item."});
+    }
+    console.log("Checked for user_id in middleware");
+
+    core.bidOnItem(params, (err) => {
+        if (err) {
+            return res.status(500).send({"error_message": err});
+        }
+        if (err === 400) return res.status(400).send({"error_message": "Bid not valid. Is it more than the current bid?"});
+        if (err === 403) return res.status(403).send({"error_message": "You cannot bid on your own item"});
+        return res.status(201).send("Successfully bid on item.");
+    });
 }
 
 const getItemSpecificBid = (req, res) => {
