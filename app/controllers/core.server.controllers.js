@@ -57,7 +57,7 @@ const item = (req, res) => {
 }
 
 const itemSpecific = (req, res) => {
-    core.getSpecificItems(req.body.item_id, (err, data) => {
+    core.getSpecificItems({item_id: req.body.item_id}, (err, data) => {
         if (err) {
             return res.status(500).send({"error_message": err});
         }
@@ -75,28 +75,51 @@ const postItemSpecificBid = (req, res) => {
     if (req.body > 1) {
         return res.status(400).send({"error_message": "Invalid"});
     }
-    const { error, data } = schema.validate(req.body.amount);
-    if(error) {
+    const {error, data} = schema.validate(req.body);
+    if (error) {
         console.error("Bid: " + req.body.amount + ". Reason of failure: " + error.message);
         return res.status(400).send({"error_message": error.message});
     }
 
-    const params = {...data, creator_id: req.user_id, item_id: req.body.item_id};
-
     if (!req.user_id) {
+        console.log("No User ID Found.")
         return res.status(401).send({"error_message": "Please login before bidding on an item."});
     }
     console.log("Checked for user_id in middleware");
 
-    core.bidOnItem(params, (err) => {
-        if (err) {
-            return res.status(500).send({"error_message": err});
+    const params = {amount: req.body.amount, creator_id: req.user_id, item_id: req.body.item_id};
+
+    core.getSpecificItems(params, (err, data) => {
+        if (err === 400) {
+            console.log("400 error: " + err.message);
+            return res.status(400).send({"error_message": err.message});
         }
-        if (err === 400) return res.status(400).send({"error_message": "Bid not valid. Is it more than the current bid?"});
-        if (err === 403) return res.status(403).send({"error_message": "You cannot bid on your own item"});
-        return res.status(201).send("Successfully bid on item.");
+        if (err === 404) {
+            console.log("404 error: " + err.message);
+            return res.status(404).send({"error_message": "Item not found"});
+        }
+        if (err === 403) {
+            console.log("403 error: " + err.message);
+            return res.status(403).send({"error_message": "You cannot bid on your own item"});
+        }
+        if (err) {
+            console.log("500 error: " + err.message);
+            return res.status(500).send({"error_message": "Server Error"});
+        }
+        core.getCurrentBid(data, (err, data) => {
+            if (err) return res.status(500).send({"error_message": err.message});
+            core.bidOnItem(data, (err) => {
+                if (err === 400) return res.status(400).send({"error_message": err.message});
+                if (err) {
+                    console.log("Bid on items error: " + err.message);
+                    return res.status(500).send({"error_message": err});
+                }
+                return res.status(201).send("Successfully bid on item.");
+            });
+        });
     });
 }
+
 
 const getItemSpecificBid = (req, res) => {
     return res.sendStatus(500);

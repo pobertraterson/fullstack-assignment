@@ -40,35 +40,42 @@ const createItem = (item, done) => {
 
 const getSpecificItems = (q, done) => {
     const sql = `SELECT * FROM items WHERE item_id = ?`;
-    db.get(sql, q, (err, rows) => {
+    db.get(sql, q.item_id, (err, rows) => {
         if (err) {
-            console.log(err.message);
+            console.log("Get Specific Items Error: " + err.message);
             return done(err);
         }
+        console.log("Rows: " + rows);
+        if (!rows) return done(404);
         return done(null, rows);
     })
 };
 
-const bidOnItem = (item, done) => {
-    getSpecificItems(item.item_id, (err, rows) => {
-        if (err) {
-            console.log("SERVER ERROR " + err.message)
-            return done(err);
-        }
-        if (!rows) return done(404);
-        if (item.creator_id === rows.creator_id) return done(403);
-        if (item.starting_bid <= rows.starting_bid) return done(400);
-        const sql = `UPDATE items SET starting_bid=? WHERE item_id = ?`;
-        db.run(sql, item, (err) => {
-            if (err) return done(err);
-            return done(null, item);
+
+const getCurrentBid = (q, done) => {
+    const sql = `SELECT amount FROM bids WHERE item_id = ?`;
+    db.run(sql, [q], (err, rows) => {
+        if (err) return done(err);
+        if (rows.creator_id === q.user_id) return done(403);
+        if (rows.amount >= q.amount) return done(400);
+        return done({
+            amount: rows[0].creator_id
         });
     });
 }
+const bidOnItem = (item, done) => {
+    const sql = `UPDATE items SET starting_bid=? WHERE item_id = ?`;
+    db.run(sql, [item.amount, item.item_id], (err, bid) => {
+        if (err) return done(err);
+        return done(null, bid);
+    });
+}
+
 
 module.exports = {
     searchItems,
     createItem,
     getSpecificItems,
+    getCurrentBid,
     bidOnItem
 }
