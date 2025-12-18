@@ -8,12 +8,12 @@ module.exports = function(app) {
     app.route("/item")
         .post(auth.isAuth, core.item);
 
-    app.route("/item/:itemId")
+    app.route("/item/:item_id")
         .get(core.itemSpecific);
 
-    app.route("/item/:itemId/bid")
+    app.route("/item/:item_id/bid")
         .post(auth.isAuth, core.postItemSpecificBid);
 
-    app.route("/item/:itemId/bid")
+    app.route("/item/:item_id/bid")
         .get(core.getItemSpecificBid);
 }

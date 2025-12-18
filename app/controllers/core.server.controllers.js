@@ -1,4 +1,5 @@
 const core = require("../models/core.server.models");
+const users = require("../models/user.server.models");
 const joi = require('joi');
 
 const search = (req, res) => {
@@ -87,28 +88,25 @@ const postItemSpecificBid = (req, res) => {
     }
     console.log("Checked for user_id in middleware");
 
-    const params = {amount: req.body.amount, creator_id: req.user_id, item_id: req.body.item_id};
+    const params = {amount: req.body.amount, creator_id: req.user_id, item_id: req.params.item_id};
 
-    core.getSpecificItems(params, (err, data) => {
-        if (err === 400) {
-            console.log("400 error: " + err.message);
-            return res.status(400).send({"error_message": err.message});
-        }
+    core.getSpecificItems(parseInt(params.item_id), (err, preData) => {
         if (err === 404) {
             console.log("404 error: " + err.message);
             return res.status(404).send({"error_message": "Item not found"});
-        }
-        if (err === 403) {
-            console.log("403 error: " + err.message);
-            return res.status(403).send({"error_message": "You cannot bid on your own item"});
         }
         if (err) {
             console.log("500 error: " + err.message);
             return res.status(500).send({"error_message": "Server Error"});
         }
-        core.getCurrentBid(data, (err, data) => {
+        if (err === 400) return res.status(400).send({"error_message": err.message});
+        const postData = {...preData, amount: params.amount}
+        core.getCurrentBid(postData, (err, dataTwo) => {
+            if (err === 403) return res.status(403).send({"error_message": "You cannot bid on your own item."});
+            if (err === 400) return res.status(400).send({"error_message": "Your bid may not be higher than the current bid."});
             if (err) return res.status(500).send({"error_message": err.message});
-            core.bidOnItem(data, (err) => {
+            const dataThree = {...dataTwo, amount: params.amount, user_id: req.user_id, item_id: req.params.item_id};
+            core.bidOnItem(dataThree, (err) => {
                 if (err === 400) return res.status(400).send({"error_message": err.message});
                 if (err) {
                     console.log("Bid on items error: " + err.message);
