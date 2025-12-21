@@ -82,15 +82,12 @@ const getCurrentBid = (q, done) => {
             if (!rows) return done(404);
             return done(null, {
                 originalCreatorID: rows.creator_id,
-                highestBidUser: rowsTwo ? rowsTwo.user_id : null,
-                highestBidAmount: rowsTwo ? rowsTwo.amount : null
+                currentBid: rowsTwo ? rowsTwo.amount : rows.starting_bid
             });
         });
     });
 }
 const bidOnItem = (q, done) => {
-    if (q.originalCreatorID === q.user_id) return done(403);
-    if (q.highestBidAmount >= q.amount) return done({status: 400, "error_message": "Your bid is not higher than the current bid."});
     const sql = `INSERT INTO bids (item_id, user_id, amount, timestamp) VALUES (?,?,?,?)`;
     db.run(sql, [
         q.item_id,
@@ -98,7 +95,12 @@ const bidOnItem = (q, done) => {
         q.amount,
         Date.now()
     ], (err) => {
-        if (err) return done(err);
+        if (q.originalCreatorID === q.user_id) return done(403);
+        if (q.currentBid >= q.amount) return done(400);
+        if (err) {
+            console.log(err);
+            return done(err);
+        }
         return done(null, this.lastID);
     });
 }

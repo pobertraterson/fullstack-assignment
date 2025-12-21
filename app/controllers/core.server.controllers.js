@@ -78,7 +78,6 @@ const postItemSpecificBid = (req, res) => {
     }
     const {error, data} = schema.validate(req.body);
     if (error) {
-        console.error("Bid: " + req.body.amount + ". Reason of failure: " + error.message);
         return res.status(400).send({"error_message": error.message});
     }
 
@@ -102,11 +101,11 @@ const postItemSpecificBid = (req, res) => {
         if (err === 400) return res.status(400).send({"error_message": err.message});
         const postData = {...preData, amount: params.amount}
         core.getCurrentBid(postData, (err, dataTwo) => {
-            if (err === 403) return res.status(403).send({"error_message": "You cannot bid on your own item."});
-            if (err === 400) return res.status(400).send({"error_message": "Your bid may not be higher than the current bid."});
             if (err) return res.status(500).send({"error_message": err.message});
+            console.log(dataTwo);
             const dataThree = {...dataTwo, amount: params.amount, user_id: req.user_id, item_id: req.params.item_id};
             core.bidOnItem(dataThree, (err) => {
+                if (err === 403) return res.status(403).send({"error_message": "You cannot bid on your own item."});
                 if (err === 400) return res.status(400).send({"error_message": err.message});
                 if (err) {
                     console.log("Bid on items error: " + err.message);
