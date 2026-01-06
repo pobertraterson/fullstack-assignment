@@ -89,14 +89,15 @@ const getCurrentBid = (q, done) => {
 }
 const bidOnItem = (q, done) => {
     const sql = `INSERT INTO bids (item_id, user_id, amount, timestamp) VALUES (?,?,?,?)`;
+    if (q.originalCreatorID === q.user_id) return done(403);
     db.run(sql, [
         q.item_id,
         q.user_id,
         q.amount,
         Date.now()
     ], (err) => {
-        if (q.originalCreatorID === q.user_id) return done(403);
-        if (q.currentBid >= q.amount) return done(400);
+        if (!q.currentBid) return done(400);
+        if (q.amount <= q.currentBid) return done(400);
         if (err) {
             console.log(err);
             return done(err);

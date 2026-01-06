@@ -98,15 +98,19 @@ const postItemSpecificBid = (req, res) => {
             console.log("500 error: " + err.message);
             return res.status(500).send({"error_message": "Server Error"});
         }
-        if (err === 400) return res.status(400).send({"error_message": err.message});
         const postData = {...preData, amount: params.amount}
+        console.log("***POST DATA**");
+        console.log(postData);
         core.getCurrentBid(postData, (err, dataTwo) => {
             if (err) return res.status(500).send({"error_message": err.message});
+            console.log("***DATA TWO***");
             console.log(dataTwo);
             const dataThree = {...dataTwo, amount: params.amount, user_id: req.user_id, item_id: req.params.item_id};
+            console.log("***DATA THREE***");
+            console.log(dataThree);
             core.bidOnItem(dataThree, (err) => {
                 if (err === 403) return res.status(403).send({"error_message": "You cannot bid on your own item."});
-                if (err === 400) return res.status(400).send({"error_message": err.message});
+                if (err === 400) return res.status(400).send({"error_message": "Your bid either wasn't valid or was not higher than the current highest bid."});
                 if (err) {
                     console.log("Bid on items error: " + err.message);
                     return res.status(500).send({"error_message": err});
@@ -117,7 +121,7 @@ const postItemSpecificBid = (req, res) => {
     });
 }
 
-
+// BID HISTORY
 const getItemSpecificBid = (req, res) => {
     return res.sendStatus(500);
 }
