@@ -121,9 +121,21 @@ const postItemSpecificBid = (req, res) => {
     });
 }
 
+const getItem = (req, res) => {
+    core.getItemInfo(req.params.item_id, (err, data) => {
+        if (err) return res.status(500).send({"error_message": "Server Error"});
+        if (!data) return res.status(404).send({"error_message": "Not Found"});
+        return res.status(200).send({data});
+    })
+}
+
 // BID HISTORY
 const getItemSpecificBid = (req, res) => {
-    return res.sendStatus(500);
+    core.bidHistory(req.params.item_id, (err, data) => {
+        if (err === 404) return res.status(404).send({"error_message": "No item found"});
+        if (err) return res.status(500).send({"error_message": err.message});
+        return res.status(200).send(data);
+    });
 }
 
 module.exports = {
@@ -131,5 +143,6 @@ module.exports = {
     item,
     itemSpecific,
     postItemSpecificBid,
-    getItemSpecificBid
+    getItemSpecificBid,
+    getItem
 }

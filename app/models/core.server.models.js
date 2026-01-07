@@ -106,11 +106,57 @@ const bidOnItem = (q, done) => {
     });
 }
 
+const getItemInfo = (q, done) => {
+    const sql = `SELECT items.item_id, items.name, items.description, items.starting_bid, items.start_date, items.end_date, items.creator_id, COALESCE(bids.amount, items.starting_bid) AS current_bid, usersone.first_name AS first_name, usersone.last_name AS last_name, bids.user_id AS highest_bid_user_id, userstwo.first_name AS highest_bid_first_name, userstwo.last_name AS highest_bid_last_name FROM items JOIN users usersone ON usersone.user_id = items.creator_id LEFT JOIN bids ON bids.item_id = items.item_id AND bids.amount = ( SELECT amount FROM bids WHERE item_id = items.item_id ORDER BY amount DESC LIMIT 1 ) LEFT JOIN users userstwo ON userstwo.user_id = bids.user_id WHERE items.item_id = ?`;
+    db.get(sql, q, (err, rows) => {
+       if (err) return done(err);
+       if (!rows) return done(404);
+       return done(null, {
+           item_id: rows.item_id,
+           name: rows.name,
+           description: rows.description,
+           starting_bid: rows.starting_bid,
+           start_date: rows.start_date,
+           end_date: rows.end_date,
+           creator_id: rows.creator_id,
+           current_bid: rows.current_bid,
+           first_name: rows.first_name,
+           last_name: rows.last_name,
+           user_id: rows.highest_bid_user_id
+           ? {
+               user_id: rows.highest_bid_user_id,
+               first_name: rows.highest_bid_first_name,
+               last_name: rows.highest_bid_last_name
+           }
+           : null
+       });
+    });
+}
+
+const bidHistory = (q, done) => {
+    const sqlOne = `SELECT item_id FROM items WHERE item_id = ?`;
+    db.get(sqlOne, q, (err, rows) => {
+        if (err) return done(err);
+        console.log("***bidHistory: ROWS FROM SQLONE***")
+        console.log(rows)
+        if (!rows) return done(404);
+        const sqlTwo = `SELECT bids.item_id, bids.user_id, users.first_name, users.last_name, bids.amount, bids.timestamp FROM bids JOIN users ON bids.user_id = users.user_id WHERE bids.item_id = ? ORDER BY bids.timestamp DESC`;
+        db.all(sqlTwo, q, (err, rowsTwo) => {
+            console.log("***bidHistory: ROWS FROM SQLTWO***");
+            console.log(rowsTwo);
+            if (err) return done(err);
+            return done(null, rowsTwo || null);
+        });
+    });
+}
+
 
 module.exports = {
     searchItems,
     createItem,
     getSpecificItems,
     getCurrentBid,
-    bidOnItem
+    bidOnItem,
+    getItemInfo,
+    bidHistory
 }
