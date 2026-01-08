@@ -75,8 +75,17 @@ const logout = (req, res) => {
     // });
 }
 
+const getUserHistory = (req, res) => {
+    users.userHistory(req.params.user_id, (err, data) => {
+        if (!data) return res.status(404).send({"error_message": "User does not exist"});
+        if (err) return res.status(500).send({"error_message": "500 Server Error"});
+        return res.status(200).send(data);
+    })
+}
+
 module.exports = {
     create_account: create_account,
     login: login,
-    logout: logout
+    logout: logout,
+    getUserHistory: getUserHistory
 }

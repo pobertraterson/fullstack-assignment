@@ -110,7 +110,7 @@ const bidOnItem = (q, done) => {
 
 const getItemInfo = (q, done) => {
     // I'd like to thank GitHub Copilot for this sql query because I did not have any clue on what I was doing.
-        const sql = `SELECT i.item_id, i.name AS name, i.description AS description, i.starting_bid AS starting_bid, i.start_date AS start_date, i.end_date AS end_date, i.creator_id, COALESCE(b.amount, i.starting_bid) AS current_bid, creator.first_name AS first_name, creator.last_name AS last_name, b.user_id AS current_bid_user_id, current_bid_user.first_name AS current_bid_first_name, current_bid_user.last_name AS current_bid_last_name FROM items i LEFT JOIN users creator ON creator.user_id = i.creator_id LEFT JOIN bids b ON b.item_id = i.item_id AND b.amount = (SELECT amount FROM bids WHERE item_id = i.item_id ORDER BY amount DESC LIMIT 1) LEFT JOIN users current_bid_user ON current_bid_user.user_id = b.user_id WHERE i.item_id = ?`;
+    const sql = `SELECT i.item_id, i.name AS name, i.description AS description, i.starting_bid AS starting_bid, i.start_date AS start_date, i.end_date AS end_date, i.creator_id, COALESCE(b.amount, i.starting_bid) AS current_bid, creator.first_name AS first_name, creator.last_name AS last_name, b.user_id AS current_bid_user_id, current_bid_user.first_name AS current_bid_first_name, current_bid_user.last_name AS current_bid_last_name FROM items i LEFT JOIN users creator ON creator.user_id = i.creator_id LEFT JOIN bids b ON b.item_id = i.item_id AND b.amount = (SELECT amount FROM bids WHERE item_id = i.item_id ORDER BY amount DESC LIMIT 1) LEFT JOIN users current_bid_user ON current_bid_user.user_id = b.user_id WHERE i.item_id = ?`;
     db.get(sql, q, (err, rows) => {
         if (!rows) return done(404);
         if (err) {

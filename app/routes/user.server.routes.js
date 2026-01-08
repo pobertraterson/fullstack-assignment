@@ -10,4 +10,7 @@ module.exports = function(app) {
 
     app.route("/logout")
         .post(auth.isAuth, users.logout);
+
+    app.route("/users/:user_id")
+        .get(users.getUserHistory);
 }

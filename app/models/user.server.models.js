@@ -79,11 +79,37 @@ const getIdFromToken = (token, done) => {
     });
 };
 
+const userHistory = (q, done) => {
+    const sqlUser = `SELECT * FROM users WHERE user_id=?`;
+    db.get(sqlUser, q, (err, rows) => {
+        if (err) return done(err);
+        if (!rows) return done(null,null);
+        const sqlItems = 'SELECT i.item_id, i.name, i.description, i.end_date, i.creator_id, u.user_id, u.first_name, u.last_name FROM items i INNER JOIN users u ON i.creator_id=u.user_id WHERE creator_id=?';
+        const sqlBids = `SELECT i.item_id, i.name, i.description, i.end_date, i.creator_id, u.first_name, u.last_name FROM bids b JOIN items i ON b.item_id = i.item_id JOIN users u ON i.creator_id = u.user_id WHERE b.user_id = ? GROUP BY i.item_id`;
+        db.all(sqlItems, q, (err, rowsItems) => {
+            if (err) return done(err);
+            console.log("***USERHISTORY ITEMS ROWS***");
+            console.log(rowsItems);
+            db.all(sqlBids, q, (err, rowsBids) => {
+                if (err) return done(err);
+                console.log("***USERHISTORY BIDS ROWS***");
+                console.log(rowsBids);
+
+                rows.selling = rowsItems || [];
+                rows.bidding_on = rowsBids || [];
+                rows.auctions_ended = [];
+                return done(null, rows);
+            })
+        });
+    });
+}
+
 module.exports = {
     addNewUser,
     authenticateUser,
     setToken,
     getToken,
     removeToken,
-    getIdFromToken
+    getIdFromToken,
+    userHistory
 }
