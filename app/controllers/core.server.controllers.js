@@ -39,7 +39,7 @@ const item = (req, res) => {
     });
 
 
-    const { error, data} = schema.validate(req.body);
+    const { error} = schema.validate(req.body);
     if(error) {
         console.error("Item: " + req.body.name + ". Reason of failure: " + error.message);
         return res.status(400).send({"error_message": error.message});
@@ -49,7 +49,11 @@ const item = (req, res) => {
         return res.status(401).send({"error_message": "Please login before adding an item for auction."});
     }
 
-    const params = {...data, creator_id: req.user_id};
+    console.log("***DATA FROM req.body IN CONTROLLER***");
+    console.log(req.body);
+    const params = {...req.body, creator_id: req.user_id};
+    console.log("***DATA FROM params IN CONTROLLER***");
+    console.log(params);
 
     core.createItem(params, (err, item_id) => {
         if (err) return res.status(500).send({"error_message": err});
@@ -59,10 +63,10 @@ const item = (req, res) => {
 
 const itemSpecific = (req, res) => {
     core.getSpecificItems({item_id: req.body.item_id}, (err, data) => {
+        if (err === 404) return res.status(404).send({"error_message": "Not Found"});
         if (err) {
             return res.status(500).send({"error_message": err});
         }
-        if (err === 404) return res.status(404).send({"error_message": "Not Found"});
         return res.status(200).send({data});
     })
 }
@@ -123,9 +127,9 @@ const postItemSpecificBid = (req, res) => {
 
 const getItem = (req, res) => {
     core.getItemInfo(req.params.item_id, (err, data) => {
-        if (err) return res.status(500).send({"error_message": "Server Error"});
         if (!data) return res.status(404).send({"error_message": "Not Found"});
-        return res.status(200).send({data});
+        if (err) return res.status(500).send({"error_message": "Server Error"});
+        return res.status(200).send(data);
     })
 }
 

@@ -9,11 +9,9 @@ module.exports = function(app) {
         .post(auth.isAuth, core.item);
 
     app.route("/item/:item_id")
-        .get(core.itemSpecific);
+        .get(core.getItem);
 
     app.route("/item/:item_id/bid")
-        .post(auth.isAuth, core.postItemSpecificBid);
-
-    app.route("/item/:item_id/bid")
+        .post(auth.isAuth, core.postItemSpecificBid)
         .get(core.getItemSpecificBid);
 }

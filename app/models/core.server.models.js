@@ -21,6 +21,8 @@ const searchItems = (q, done) => {
 };
 
 const createItem = (item, done) => {
+    console.log("***DATA FROM item IN createItem***");
+    console.log(item);
     const sql = `INSERT INTO items (name, description, starting_bid, start_date, end_date, creator_id) VALUES (?,?,?,?,?,?)`;
     db.run(sql, [
         item.name,
@@ -107,10 +109,17 @@ const bidOnItem = (q, done) => {
 }
 
 const getItemInfo = (q, done) => {
-    const sql = `SELECT items.item_id, items.name, items.description, items.starting_bid, items.start_date, items.end_date, items.creator_id, COALESCE(bids.amount, items.starting_bid) AS current_bid, usersone.first_name AS first_name, usersone.last_name AS last_name, bids.user_id AS highest_bid_user_id, userstwo.first_name AS highest_bid_first_name, userstwo.last_name AS highest_bid_last_name FROM items JOIN users usersone ON usersone.user_id = items.creator_id LEFT JOIN bids ON bids.item_id = items.item_id AND bids.amount = ( SELECT amount FROM bids WHERE item_id = items.item_id ORDER BY amount DESC LIMIT 1 ) LEFT JOIN users userstwo ON userstwo.user_id = bids.user_id WHERE items.item_id = ?`;
+    // I'd like to thank GitHub Copilot for this sql query because I did not have any clue on what I was doing.
+        const sql = `SELECT i.item_id, i.name AS name, i.description AS description, i.starting_bid AS starting_bid, i.start_date AS start_date, i.end_date AS end_date, i.creator_id, COALESCE(b.amount, i.starting_bid) AS current_bid, creator.first_name AS first_name, creator.last_name AS last_name, b.user_id AS current_bid_user_id, current_bid_user.first_name AS current_bid_first_name, current_bid_user.last_name AS current_bid_last_name FROM items i LEFT JOIN users creator ON creator.user_id = i.creator_id LEFT JOIN bids b ON b.item_id = i.item_id AND b.amount = (SELECT amount FROM bids WHERE item_id = i.item_id ORDER BY amount DESC LIMIT 1) LEFT JOIN users current_bid_user ON current_bid_user.user_id = b.user_id WHERE i.item_id = ?`;
     db.get(sql, q, (err, rows) => {
-       if (err) return done(err);
-       if (!rows) return done(404);
+        if (!rows) return done(404);
+        if (err) {
+            console.log("***ERROR FROM db.get getItemInfo***")
+            console.log(err);
+            return done(err);
+        }
+       console.log("***getItemInfo ROWS DATA***");
+       console.log(rows);
        return done(null, {
            item_id: rows.item_id,
            name: rows.name,
@@ -122,11 +131,11 @@ const getItemInfo = (q, done) => {
            current_bid: rows.current_bid,
            first_name: rows.first_name,
            last_name: rows.last_name,
-           user_id: rows.highest_bid_user_id
+           current_bid_holder: rows.current_bid_user_id
            ? {
-               user_id: rows.highest_bid_user_id,
-               first_name: rows.highest_bid_first_name,
-               last_name: rows.highest_bid_last_name
+               user_id: rows.current_bid_user_id,
+               first_name: rows.current_bid_first_name,
+               last_name: rows.current_bid_last_name
            }
            : null
        });
@@ -136,16 +145,19 @@ const getItemInfo = (q, done) => {
 const bidHistory = (q, done) => {
     const sqlOne = `SELECT item_id FROM items WHERE item_id = ?`;
     db.get(sqlOne, q, (err, rows) => {
-        if (err) return done(err);
-        console.log("***bidHistory: ROWS FROM SQLONE***")
-        console.log(rows)
         if (!rows) return done(404);
-        const sqlTwo = `SELECT bids.item_id, bids.user_id, users.first_name, users.last_name, bids.amount, bids.timestamp FROM bids JOIN users ON bids.user_id = users.user_id WHERE bids.item_id = ? ORDER BY bids.timestamp DESC`;
+        if (err) return done(err);
+        console.log("***bidHistory: ROWS FROM SQLONE***");
+        console.log(rows);
+        const sqlTwo = `SELECT bids.item_id, bids.amount, bids.timestamp, bids.user_id, users.first_name, users.last_name FROM bids JOIN users ON bids.user_id = users.user_id WHERE bids.item_id = ? ORDER BY bids.timestamp DESC`;
         db.all(sqlTwo, q, (err, rowsTwo) => {
+            console.log("***bidHistory: ROWS FROM SQLTWO PRE-POP***");
+            console.log(rowsTwo);
+            if (rowsTwo.length > 1) rowsTwo.pop(); // It's showing the starting bid as the very first bid which I don't think is the right thing so I am using pop(). If I am wrong, I am stupid.
             console.log("***bidHistory: ROWS FROM SQLTWO***");
             console.log(rowsTwo);
             if (err) return done(err);
-            return done(null, rowsTwo || null);
+            return done(null, rowsTwo || []);
         });
     });
 }
