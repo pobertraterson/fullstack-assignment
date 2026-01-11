@@ -73,6 +73,7 @@ const removeToken = (token, done) => {
 const getIdFromToken = (token, done) => {
     const sql = 'SELECT user_id FROM users WHERE session_token=?';
     db.get(sql, [token], (err, row) => {
+        console.log("user model gIDFT: " +row);
         if (err) return done(err);
         if (!row) return done(null,null);
         return done(null, row.user_id);

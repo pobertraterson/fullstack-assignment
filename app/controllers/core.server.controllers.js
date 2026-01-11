@@ -8,17 +8,16 @@ const search = (req, res) => {
     const status = req.query.status || null;
     const limit = req.query.limit || "";
     const offset = req.query.offset || "";
-    const statusTypes = ["Open", "Bid", "Archive"];
+    const statusTypes = ["OPEN", "BID", "ARCHIVE"];
     if (status && !statusTypes.includes(status)) return res.status(400).send({"error_message": "Invalid request."});
-    const userToken = req.get('X-Authorization');
-    let user_id;
-    users.getIdFromToken(userToken, (err, user) => {
-        if (err) return res.status(500).send({"error_message": "500 Server Error."});
-        if(!user) {
-            user_id = null;
-            // if (status) return res.status(400).send({"error_message": "You cannot search for auctions that you have auctioned or bid on."});
-        } else {
-            user_id = user.user_id;
+    const token = req.get('X-Authorization');
+    users.getIdFromToken(token, (err, user) => {
+        if (err) return res.status(500).send({ "error_message": "500 Server Error." });
+
+        const user_id = user ? (user.id !== undefined ? user.id : user) : null;
+
+        if ((status === "Open" || status === "Bid") && !user_id) {
+            return res.status(400).send({ "error_message": "You need to log in to see auctions you've created or bid on." });
         }
         const params = {
             query: query,
