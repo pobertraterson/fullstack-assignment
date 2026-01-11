@@ -18,6 +18,52 @@ const searchItems = (q, done) => {
             sql += "AND (i.description LIKE '%" + params.q + " %')) ";
         }
      */
+
+    let sql = `
+        SELECT i.item_id, i.name, i.description, i.end_date, i.creator_id, u.first_name, u.last_name
+        FROM items i
+                 INNER JOIN users u ON i.creator_id = u.user_id
+                 LEFT JOIN bids b ON b.item_id = i.item_id
+        WHERE (i.name LIKE ? OR i.description LIKE ?)
+    `;
+
+    const params = [`%${q.query}%`, `%${q.query}%`];
+
+    if (q.user_id) {
+        sql += ` AND i.creator_id = ?`;
+        params.push(q.user_id);
+    } else {
+        q.status = null;
+        console.log("You can't search for items you are auctioning or have bid on if you aren't signed in.");
+    }
+
+    if (q.user_id) {
+        switch (q.status) {
+            case "Open":
+                sql += ` AND i.creator_id = ? AND i.end_date > ?`;
+                params.push(q.user_id, Date.now());
+                break;
+            case "Bid":
+                sql += ` AND b.user_id = ?`;
+                params.push(q.user_id);
+                break;
+            case "Archive":
+                sql += ` AND i.end_date < ?`;
+                params.push(Date.now());
+                break;
+        }
+    }
+
+    sql += ` ORDER BY i.item_id ASC LIMIT ? OFFSET ?`;
+    params.push(parseInt(q.limit, 10) || 50, parseInt(q.offset, 10) || 0);
+
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            console.error(err.message);
+            return done(err);
+        }
+        return done(null, rows);
+    });
 };
 
 const createItem = (item, done) => {

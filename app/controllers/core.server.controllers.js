@@ -3,30 +3,38 @@ const users = require("../models/user.server.models");
 const joi = require('joi');
 
 const search = (req, res) => {
-    return res.sendStatus(500);
-    // core.searchItems(q, (err, items) => {
-    //     if(err) return res.status(500).send({"error_message": err});
-    //     return res.status(200).send(items);
-    // });
-
-    /*
-        From week 10 Webinar going through questions and shit that I will still get wrong :(
-        (this is a mess)
-
-        let param_valid = true;
-        if (req.query.q){
-            if (typeof(req.query.d) != "string") {
-                param_valid = false;
-            }
+    // return res.sendStatus(500);
+    const query = req.query.q || "";
+    const status = req.query.status || null;
+    const limit = req.query.limit || "";
+    const offset = req.query.offset || "";
+    const statusTypes = ["Open", "Bid", "Archive"];
+    if (status && !statusTypes.includes(status)) return res.status(400).send({"error_message": "Invalid request."});
+    const userToken = req.get('X-Authorization');
+    let user_id;
+    users.getIdFromToken(userToken, (err, user) => {
+        if (err) return res.status(500).send({"error_message": "500 Server Error."});
+        if(!user) {
+            user_id = null;
+            // if (status) return res.status(400).send({"error_message": "You cannot search for auctions that you have auctioned or bid on."});
+        } else {
+            user_id = user.user_id;
         }
-        if (!params_valid) {
-            return res.sendStatus(500);
+        const params = {
+            query: query,
+            status: status,
+            limit: limit,
+            offset: offset,
+            user_id: user_id,
         }
+        console.log("***PARAMS FROM SEARCH***");
+        console.log(params);
+        core.searchItems(params, (err, items) => {
+            if (err) return res.status(500).send({"error_message": err});
+            return res.status(200).send(items);
+        })
+    })
 
-        if(!user_id && req.query.status) {
-            return res.sendStatus(400);
-        }
-     */
 }
 
 const item = (req, res) => {
