@@ -23,25 +23,22 @@ const searchItems = (q, done) => {
 
     const params = [`%${q.query}%`, `%${q.query}%`];
 
-    if (q.user_id) {
-        sql += ` AND i.creator_id = ?`;
-        params.push(q.user_id);
-    } else {
+    if (!q.user_id) {
         q.status = null;
         console.log("You can't search for items you are auctioning or have bid on if you aren't signed in.");
     }
 
-    if (q.user_id) {
-        switch (q.status) {
-            case "Open":
+    if (q.user_id && q.status) {
+        switch (String(q.status).toUpperCase()) {
+            case "OPEN":
                 sql += ` AND i.creator_id = ? AND i.end_date > ?`;
                 params.push(q.user_id, Date.now());
                 break;
-            case "Bid":
+            case "BID":
                 sql += ` AND b.user_id = ?`;
                 params.push(q.user_id);
                 break;
-            case "Archive":
+            case "ARCHIVE":
                 sql += ` AND i.end_date < ?`;
                 params.push(Date.now());
                 break;

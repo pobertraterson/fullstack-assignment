@@ -16,7 +16,7 @@ const search = (req, res) => {
 
         const user_id = user ? (user.id !== undefined ? user.id : user) : null;
 
-        if ((status === "Open" || status === "Bid") && !user_id) {
+        if ((status === "OPEN" || status === "BID") && !user_id) {
             return res.status(400).send({ "error_message": "You need to log in to see auctions you've created or bid on." });
         }
         const params = {
