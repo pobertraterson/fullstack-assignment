@@ -19,13 +19,7 @@ const searchItems = (q, done) => {
         }
      */
 
-    let sql = `
-        SELECT i.item_id, i.name, i.description, i.end_date, i.creator_id, u.first_name, u.last_name
-        FROM items i
-                 INNER JOIN users u ON i.creator_id = u.user_id
-                 LEFT JOIN bids b ON b.item_id = i.item_id
-        WHERE (i.name LIKE ? OR i.description LIKE ?)
-    `;
+    let sql = `SELECT DISTINCT i.item_id, i.name, i.description, i.end_date, i.creator_id, u.first_name, u.last_name FROM items i INNER JOIN users u ON i.creator_id = u.user_id LEFT JOIN bids b ON b.item_id = i.item_id WHERE (i.name LIKE ? OR i.description LIKE ?)`;
 
     const params = [`%${q.query}%`, `%${q.query}%`];
 
@@ -62,6 +56,7 @@ const searchItems = (q, done) => {
             console.error(err.message);
             return done(err);
         }
+        console.log(rows);
         return done(null, rows);
     });
 };
