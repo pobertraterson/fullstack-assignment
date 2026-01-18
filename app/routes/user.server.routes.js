@@ -13,4 +13,7 @@ module.exports = function(app) {
 
     app.route("/users/:user_id")
         .get(users.getUserHistory);
+
+    app.route("/usertoken")
+        .get(users.getIdFromToken)
 }

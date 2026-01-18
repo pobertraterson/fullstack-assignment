@@ -75,6 +75,14 @@ const logout = (req, res) => {
     // });
 }
 
+const getIdFromToken = (req, res) => {
+    const token = req.get('X-Authorization');
+    users.getIdFromToken(token, (err, id) => {
+        if (err) return res.status(500).send({"error_message": err});
+        return res.status(200).send({user_id: id})
+    })
+}
+
 const getUserHistory = (req, res) => {
     users.userHistory(req.params.user_id, (err, data) => {
         if (!data) return res.status(404).send({"error_message": "User does not exist"});
@@ -87,5 +95,6 @@ module.exports = {
     create_account: create_account,
     login: login,
     logout: logout,
-    getUserHistory: getUserHistory
+    getUserHistory: getUserHistory,
+    getIdFromToken: getIdFromToken
 }
