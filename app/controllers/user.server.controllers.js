@@ -45,6 +45,10 @@ const login = (req, res) => {
         if (err === 404) return res.status(400).send({"error_message": "Incorrect email or password. Error details: " + err});
         if (err) return res.status(500).send({"error_message": err});
 
+        if (!id) {
+            return res.status(400).send({"error_message": "Incorrect email or password."});
+        }
+
         users.getToken(id, (err, token) => {
             if (err) return res.sendStatus(500);
             if (token){
