@@ -1,3 +1,9 @@
+> **This is an archived repository. I will not be updating this further as I have completed the module for University.**
+>
+> This achieved a 1st classification.
+> Front-end won't be made public.
+
+
 # 2025 - 2026 Full Stack Assignment
 From Rob
 
@@ -17,6 +23,7 @@ If you have any issues, come see me in the labs.
 
 
 Ash
+
 
 
 
